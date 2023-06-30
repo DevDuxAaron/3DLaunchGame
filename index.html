@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Game</title>
+</head>
+
+<body>
+    <script src="./matter.js"></script>
+    <script>
+        var Engine = Matter.Engine,
+            Render = Matter.Render,
+            Runner = Matter.Runner,
+            Bodies = Matter.Bodies,
+            Composite = Matter.Composite;
+
+        var engine = Engine.create();
+
+        // create a renderer
+        var render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: 1200,
+                height: 600,
+                wireframes: false,
+            },
+        });
+
+        //   create two boxes and a ground
+        //   var boxA = Bodies.rectangle(400, 200, 80, 80);
+        //   var boxB = Bodies.rectangle(450, 50, 80, 80);
+        // var ground = Bodies.rectangle(400, 610, 810, 60, { isStatic: true });
+        var ground = Bodies.rectangle(1000, 400, 300, 20, { isStatic: true });
+
+        let mouse = Matter.Mouse.create(render.canvas);
+        let mouseConstraint = Matter.MouseConstraint.create(engine, {
+            mouse: mouse,
+            constraint: {
+                render: { visible: false },
+            },
+        });
+        render.mouse = mouse;
+
+        let ball = Bodies.circle(300,400,20)
+        let sling = Matter.Constraint.create({
+            pointA: {x:300, y:400},
+            bodyB: ball,
+            stiffness: 0.05
+        })
+        //   A group of squares
+        //   let stack = Matter.Composites.stack(200,200,4,4,0,0, function(x,y){
+        //     return Bodies.rectangle(x,y,80,80)
+        //   })
+
+        // A group of figures
+        // let stack = Matter.Composites.stack(200, 200, 4, 4, 0, 0,
+        //     function (x, y) {
+        //         let sides = Math.round(Matter.Common.random(2, 8));
+        //         return Matter.Bodies.polygon(
+        //             x,
+        //             y,
+        //             sides,
+        //             Matter.Common.random(20, 50)
+        //         );
+        //     }
+        // );
+
+        // A group of octagons
+        let stack = Matter.Composites.stack(900, 100, 4, 4, 0, 0,
+            function (x, y) {
+                return Matter.Bodies.polygon(
+                    x,
+                    y,
+                    8,
+                    30
+                );
+            }
+        );
+
+        let firing = false
+        Matter.Events.on(mouseConstraint, 'enddrag', function(e){
+            if(e.body === ball) firing = true
+        })
+        Matter.Events.on(engine, 'afterUpdate', function (){
+            if(firing && Math.abs(ball.position.x- 300) < 20 && Math.abs(ball.position.y- 400) < 20){
+                ball = Bodies.circle(300,400,20)
+                Composite.add(engine.world, ball)
+                sling.bodyB = ball
+                firing = false
+            }
+        })
+
+        // add all of the bodies to the world
+        //   Composite.add(engine.world, [boxA, boxB, ground,  mouseConstraint]);
+        Composite.add(engine.world, [stack, ground, ball, sling, mouseConstraint]);
+
+        // run the renderer
+        Render.run(render);
+
+        // create runner
+        var runner = Runner.create();
+
+        // run the engine
+        Runner.run(runner, engine);
+    </script>
+</body>
+
+</html>
